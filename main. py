@@ -1,0 +1,91 @@
+from kivy.app import App
+from kivy.core.window import Window
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.label import Label
+from kivy.uix.popup import Popup
+
+Window.clearcolor = (0.55, 0.05, 0.05, 1)
+
+DISCLAIMER = ("Rozpoznanie to tylko wskazówka. Nigdy nie zbieraj ani nie jedz "
+              "rośliny na podstawie tej aplikacji.")
+
+MENU_ITEMS = [
+    "Moje rośliny",
+    "Pokaż trujące",
+    "Pokaż jadalne",
+    "Pokaż lecznicze",
+    "Pokaż inne",
+    "Edytuj (dodaj/usuń)",
+    "Notatnik",
+    "Wyjście",
+]
+
+PLANTS = []  # później wczytamy z plants.json
+
+
+class Pokedex(BoxLayout):
+    def __init__(self, **kwargs):
+        super().__init__(orientation="vertical", padding=10, spacing=10, **kwargs)
+
+        self.screen = Label(
+            text=f"ARCANUM HERBINARUM\n\nNaciśnij START\n\n{DISCLAIMER}",
+            halign="center",
+            valign="middle",
+            font_size="18sp",
+        )
+        self.screen.bind(size=self.screen.setter("text_size"))
+        self.add_widget(self.screen)
+
+        self.add_widget(self._row([("START", self.on_start), ("SELECT", self.on_select)]))
+        self.add_widget(self._row([("A", self.on_a), ("B", self.on_b)]))
+        self.add_widget(self._row([("X", self.on_x), ("Y", self.on_y)]))
+
+    def _row(self, buttons):
+        row = BoxLayout(size_hint_y=None, height="56dp", spacing=8)
+        for text, callback in buttons:
+            btn = Button(text=text, background_color=(0.2, 0.2, 0.2, 1))
+            btn.bind(on_release=callback)
+            row.add_widget(btn)
+        return row
+
+    def on_start(self, *args):
+        self.screen.text = f"Witaj w Pokédexie.\nWybierz SELECT, aby otworzyć menu.\n\n{DISCLAIMER}"
+
+    def on_select(self, *args):
+        content = BoxLayout(orientation="vertical", spacing=6, padding=10)
+        popup = Popup(title="MENU", content=content, size_hint=(0.9, 0.9))
+        for item in MENU_ITEMS:
+            btn = Button(text=item, size_hint_y=None, height="48dp")
+            btn.bind(on_release=lambda _b, name=item: self.open_item(name, popup))
+            content.add_widget(btn)
+        popup.open()
+
+    def open_item(self, name, popup):
+        popup.dismiss()
+        if name == "Wyjście":
+            App.get_running_app().stop()
+            return
+        self.screen.text = f"{name}\n\nTa sekcja pojawi się w kolejnym etapie.\n\n{DISCLAIMER}"
+
+    def on_a(self, *args):
+        self.screen.text = "Zatwierdzono."
+
+    def on_b(self, *args):
+        self.screen.text = "Anulowano."
+
+    def on_x(self, *args):
+        self.screen.text = "Szczegóły pojawią się po wybraniu rośliny."
+
+    def on_y(self, *args):
+        self.screen.text = "Aparat pojawi się w trzecim etapie."
+
+
+class ArcanumApp(App):
+    def build(self):
+        self.title = "Arcanum Herbinarum"
+        return Pokedex()
+
+
+if __name__ == "__main__":
+    ArcanumApp().run()
